@@ -79,6 +79,7 @@ body {
     letter-spacing: 0.5px;
     background: linear-gradient(135deg, #A5B4FC, var(--accent-indigo));
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
