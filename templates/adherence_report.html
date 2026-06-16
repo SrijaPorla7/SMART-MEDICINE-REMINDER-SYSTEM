@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AuraMed | Weekly Adherence Report</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0F172A;
+            --bg-secondary: #1E293B;
+            --bg-tertiary: #334155;
+            --accent-indigo: #6366F1;
+            --accent-emerald: #10B981;
+            --accent-rose: #EF4444;
+            --text-primary: #F8FAFC;
+            --text-secondary: #94A3B8;
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            --font-family: 'Plus Jakarta Sans', 'Outfit', sans-serif;
+            --border-radius: 12px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .report-container {
+            width: 100%;
+            max-width: 800px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            border-radius: var(--border-radius);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 40px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 24px;
+            margin-bottom: 30px;
+        }
+
+        .header-title h1 {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #A5B4FC, var(--accent-indigo));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-title p {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        .controls select {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--glass-border);
+            color: var(--text-primary);
+            padding: 10px 16px;
+            border-radius: 8px;
+            outline: none;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .chart-box {
+            position: relative;
+            height: 400px;
+            width: 100%;
+            margin-bottom: 30px;
+        }
+
+        .summary-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .summary-card {
+            background-color: rgba(15, 23, 42, 0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .summary-card h4 {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .summary-card p {
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .summary-card.taken p { color: var(--accent-emerald); }
+        .summary-card.missed p { color: var(--accent-rose); }
+        .summary-card.rate p { color: var(--accent-indigo); }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.2s;
+            margin-top: 20px;
+        }
+
+        .back-link:hover {
+            color: var(--text-primary);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="report-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-title">
+                <h1>Weekly Compliance Report</h1>
+                <p>Taken vs. Missed doses grouped by day (last 7 days)</p>
+            </div>
+            <div class="controls">
+                <select id="user-selector" onchange="loadReport()">
+                    <option value="1">John Doe (Patient #1)</option>
+                    <option value="2">Jane Smith (Patient #2)</option>
+                    <option value="3">Robert Johnson (Patient #3)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="chart-box">
+            <canvas id="weeklyChart"></canvas>
+        </div>
+
+        <!-- Adherence Summary Cards -->
+        <div class="summary-row">
+            <div class="summary-card taken">
+                <h4>Total Taken</h4>
+                <p id="total-taken-count">0</p>
+            </div>
+            <div class="summary-card missed">
+                <h4>Total Missed</h4>
+                <p id="total-missed-count">0</p>
+            </div>
+            <div class="summary-card rate">
+                <h4>Adherence Rate</h4>
+                <p id="adherence-percentage">0%</p>
+            </div>
+        </div>
+
+        <!-- Back to main dashboard link -->
+        <a href="/" class="back-link">
+            <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <script>
+        let chartInstance = null;
+
+        // Fetch and load report
+        async function loadReport() {
+            const userId = document.getElementById("user-selector").value;
+            try {
+                const response = await fetch(`/adherence-report/${userId}`);
+                const result = await response.json();
+
+                if (!result.success || !result.data) {
+                    console.error("Failed to load adherence report.");
+                    return;
+                }
+
+                const logs = result.data.recent_logs;
+                processAndRenderChart(logs);
+
+            } catch (error) {
+                console.error("Connection error to adherence-report API:", error);
+            }
+        }
+
+        // Processes raw logs into last 7 days grouped datasets
+        function processAndRenderChart(logs) {
+            const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const today = new Date();
+            
+            // Initialize 7 days data structure
+            const datasets = [];
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date(today);
+                date.setDate(today.getDate() - i);
+                
+                const dateString = date.toISOString().split('T')[0];
+                const dayName = daysOfWeek[date.getDay()];
+                
+                datasets.push({
+                    dateString: dateString,
+                    dayName: dayName,
+                    shortLabel: `${dayName.substring(0,3)} (${date.getMonth()+1}/${date.getDate()})`,
+                    taken: 0,
+                    missed: 0
+                });
+            }
+
+            // Loop through logs and count status per target day
+            let overallTaken = 0;
+            let overallMissed = 0;
+
+            logs.forEach(log => {
+                const logDateStr = log.scheduled_datetime.split('T')[0];
+                const targetDay = datasets.find(d => d.dateString === logDateStr);
+
+                if (targetDay) {
+                    if (log.status === 'Taken' || log.status === 'Delayed') {
+                        targetDay.taken += 1;
+                        overallTaken += 1;
+                    } else if (log.status === 'Missed' || log.status === 'Skipped') {
+                        targetDay.missed += 1;
+                        overallMissed += 1;
+                    }
+                }
+            });
+
+            // Update text summaries
+            document.getElementById("total-taken-count").innerText = overallTaken;
+            document.getElementById("total-missed-count").innerText = overallMissed;
+            const rate = (overallTaken + overallMissed) > 0 
+                ? Math.round((overallTaken / (overallTaken + overallMissed)) * 100) 
+                : 100;
+            document.getElementById("adherence-percentage").innerText = `${rate}%`;
+
+            // Prepare Chart.js arrays
+            const labels = datasets.map(d => d.shortLabel);
+            const takenData = datasets.map(d => d.taken);
+            const missedData = datasets.map(d => d.missed);
+
+            renderChart(labels, takenData, missedData);
+        }
+
+        function renderChart(labels, takenData, missedData) {
+            const ctx = document.getElementById('weeklyChart').getContext('2d');
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Taken Doses',
+                            data: takenData,
+                            backgroundColor: 'rgba(16, 185, 129, 0.6)',
+                            borderColor: '#10B981',
+                            borderWidth: 2,
+                            borderRadius: 6
+                        },
+                        {
+                            label: 'Missed Doses',
+                            data: missedData,
+                            backgroundColor: 'rgba(239, 68, 68, 0.6)',
+                            borderColor: '#EF4444',
+                            borderWidth: 2,
+                            borderRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#94A3B8',
+                                font: {
+                                    family: "'Plus Jakarta Sans', sans-serif"
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#94A3B8',
+                                stepSize: 1
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#94A3B8'
+                            },
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize on load
+        loadReport();
+    </script>
+</body>
+</html>

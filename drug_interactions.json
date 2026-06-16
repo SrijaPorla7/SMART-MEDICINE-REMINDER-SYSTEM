@@ -1,0 +1,32 @@
+[
+  {
+    "drugs": ["atorvastatin", "grapefruit juice"],
+    "severity": "Moderate",
+    "description": "Grapefruit juice inhibits the CYP3A4 enzyme, leading to increased levels of atorvastatin in the body and a higher risk of muscle damage (myopathy)."
+  },
+  {
+    "drugs": ["lisinopril", "ibuprofen"],
+    "severity": "Moderate",
+    "description": "NSAIDs like ibuprofen may decrease the blood pressure lowering effects of lisinopril and increase the risk of kidney impairment."
+  },
+  {
+    "drugs": ["warfarin", "aspirin"],
+    "severity": "Major",
+    "description": "Both drugs prevent clotting. Co-administration increases the risk of internal bleeding and bruising."
+  },
+  {
+    "drugs": ["metformin", "contrast dye"],
+    "severity": "Major",
+    "description": "Iodinated contrast agents used during imaging can cause acute kidney injury, leading to accumulation of Metformin and potential lactic acidosis."
+  },
+  {
+    "drugs": ["albuterol", "propranolol"],
+    "severity": "Major",
+    "description": "Propranolol (a beta-blocker) can prevent albuterol (a beta-agonist) from working, potentially triggering severe bronchospasms in patients with respiratory conditions."
+  },
+  {
+    "drugs": ["lisinopril", "spironolactone"],
+    "severity": "Moderate",
+    "description": "Concomitant use may result in significantly increased potassium levels in the blood (hyperkalemia)."
+  }
+]

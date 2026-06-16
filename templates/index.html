@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AuraMed | Smart Medicine Reminder Dashboard</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <i class="fa-solid fa-house-chimney-medical brand-icon"></i>
+                <span class="brand-name">AuraMed</span>
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="#dashboard" class="nav-item active" onclick="switchTab('dashboard')">
+                    <i class="fa-solid fa-chart-line"></i> Dashboard
+                </a>
+                <a href="#schedule" class="nav-item" onclick="switchTab('schedule')">
+                    <i class="fa-solid fa-calendar-plus"></i> Add Medicine
+                </a>
+                <a href="#adherence" class="nav-item" onclick="switchTab('adherence')">
+                    <i class="fa-solid fa-clipboard-check"></i> Adherence Reports
+                </a>
+                <a href="/doctor-portal" class="nav-item">
+                    <i class="fa-solid fa-user-doctor"></i> Doctor Portal
+                </a>
+            </nav>
+
+            <div class="user-selector-container">
+                <label for="user-select"><i class="fa-solid fa-user-circle"></i> Active Patient</label>
+                <select id="user-select" class="user-select" onchange="onUserChange()">
+                    <option value="1">John Doe</option>
+                    <option value="2">Jane Smith</option>
+                    <option value="3">Robert Johnson</option>
+                </select>
+            </div>
+        </aside>
+
+        <!-- Main Body Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="top-header">
+                <div class="header-left">
+                    <h1 id="page-title">Medication Dashboard</h1>
+                    <p id="page-subtitle" class="subtitle">Real-time medication tracker and alerts</p>
+                </div>
+                <div class="header-right">
+                    <div class="live-clock">
+                        <i class="fa-regular fa-clock"></i>
+                        <span id="current-time">00:00:00 AM</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- TAB 1: DASHBOARD -->
+            <section id="tab-dashboard" class="tab-pane active">
+                <div class="dashboard-grid">
+                    <!-- Column 1: Core Stats -->
+                    <div class="stats-row">
+                        <div class="stat-card compliance">
+                            <div class="stat-info">
+                                <span class="stat-label">Adherence Rate</span>
+                                <h2 id="adherence-rate">0%</h2>
+                                <p class="stat-sub">Taken / Delayed ratio</p>
+                            </div>
+                            <div class="stat-icon-wrapper compliance-icon">
+                                <i class="fa-solid fa-circle-notch"></i>
+                            </div>
+                        </div>
+
+                        <div class="stat-card countdown">
+                            <div class="stat-info">
+                                <span class="stat-label">Next Reminder</span>
+                                <h2 id="countdown-timer">--:--:--</h2>
+                                <p id="next-med-details" class="stat-sub">No upcoming schedules</p>
+                            </div>
+                            <div class="stat-icon-wrapper countdown-icon">
+                                <i class="fa-solid fa-hourglass-half"></i>
+                            </div>
+                        </div>
+
+                        <div class="stat-card insights">
+                            <div class="stat-info">
+                                <span class="stat-label">AI High-Risk Window</span>
+                                <h2 id="ai-risk-window">Loading...</h2>
+                                <p id="ai-risk-desc" class="stat-sub">Analyzing log history</p>
+                            </div>
+                            <div class="stat-icon-wrapper insights-icon">
+                                <i class="fa-solid fa-brain"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Column 2: Today's Checklist -->
+                    <div class="card checklist-card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-prescription-bottle-medical"></i> Today's Schedule</h3>
+                            <span class="badge badge-primary" id="checklist-count">0 Doses</span>
+                        </div>
+                        <div class="card-body">
+                            <div id="med-list" class="med-list-container">
+                                <!-- Dynamic JS injection -->
+                                <div class="empty-state">
+                                    <i class="fa-solid fa-circle-check"></i>
+                                    <p>Loading schedule...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: ADD MEDICINE FORM -->
+            <section id="tab-schedule" class="tab-pane">
+                <div class="form-container card">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-notes-medical"></i> Add New Medicine Schedule</h3>
+                    </div>
+                    <div class="card-body">
+                        <form id="add-medicine-form" onsubmit="submitMedicineForm(event)">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="med-name">Medicine Name *</label>
+                                    <input type="text" id="med-name" required placeholder="e.g., Atorvastatin, Lisinopril">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="med-form">Form *</label>
+                                    <select id="med-form" required>
+                                        <option value="Tablet">Tablet</option>
+                                        <option value="Capsule">Capsule</option>
+                                        <option value="Syrup">Syrup</option>
+                                        <option value="Injection">Injection</option>
+                                        <option value="Inhaler">Inhaler</option>
+                                        <option value="Drops">Drops</option>
+                                        <option value="Ointment">Ointment</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="med-strength">Dosage Strength *</label>
+                                    <input type="text" id="med-strength" required placeholder="e.g., 500mg, 10ml, 2 puffs">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="med-dosage">Dosage Quantity *</label>
+                                    <input type="text" id="med-dosage" required placeholder="e.g., 1 Tablet, 5ml, 2 Puffs">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="med-frequency">Frequency *</label>
+                                    <select id="med-frequency" required>
+                                        <option value="Daily">Daily</option>
+                                        <option value="Alternate Days">Alternate Days</option>
+                                        <option value="Weekly">Weekly</option>
+                                        <option value="As Needed">As Needed</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="med-time">Reminder Time *</label>
+                                    <input type="time" id="med-time" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="med-start">Start Date *</label>
+                                    <input type="date" id="med-start" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="med-end">End Date</label>
+                                    <input type="date" id="med-end" placeholder="Leave empty if ongoing">
+                                </div>
+
+                                <div class="form-group full-width">
+                                    <label for="med-instructions">Special Instructions / Notes</label>
+                                    <textarea id="med-instructions" rows="3" placeholder="e.g., Take with food, do not take with milk..."></textarea>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="med-manufacturer">Manufacturer</label>
+                                    <input type="text" id="med-manufacturer" placeholder="e.g., Pfizer, GSK">
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save"></i> Save Schedule</button>
+                                <button type="reset" class="btn btn-secondary">Reset</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: ADHERENCE REPORTS -->
+            <section id="tab-adherence" class="tab-pane">
+                <div class="reports-grid">
+                    <div class="card chart-card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-chart-column"></i> Weekly Compliance (Last 7 Days)</h3>
+                        </div>
+                        <div class="card-body chart-container-el">
+                            <canvas id="complianceChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card logs-card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-history"></i> Recent Log History</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table" id="logs-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Medicine</th>
+                                            <th>Dosage</th>
+                                            <th>Scheduled Time</th>
+                                            <th>Actual Time</th>
+                                            <th>Status</th>
+                                            <th>Notes</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="logs-table-body">
+                                        <!-- Dynamic rows -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Custom JS -->
+    <script src="/static/js/main.js"></script>
+</body>
+</html>

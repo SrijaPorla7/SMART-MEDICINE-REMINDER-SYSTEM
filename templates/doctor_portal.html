@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AuraMed | Doctor Portal</title>
+    <meta name="description" content="Doctor portal for monitoring patient medication adherence and compliance metrics.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        /* ======================= DESIGN TOKENS ======================= */
+        :root {
+            --bg-primary:   #0F172A;
+            --bg-secondary: #1E293B;
+            --bg-tertiary:  #334155;
+            --border:       rgba(255,255,255,0.08);
+            --shadow:       0 8px 32px rgba(0,0,0,0.35);
+
+            --indigo:       #6366F1;
+            --indigo-dim:   rgba(99,102,241,0.12);
+            --emerald:      #10B981;
+            --emerald-dim:  rgba(16,185,129,0.12);
+            --amber:        #F59E0B;
+            --amber-dim:    rgba(245,158,11,0.12);
+            --rose:         #EF4444;
+            --rose-dim:     rgba(239,68,68,0.12);
+
+            --text-primary:   #F8FAFC;
+            --text-secondary: #94A3B8;
+            --text-muted:     #475569;
+
+            --font: 'Plus Jakarta Sans', sans-serif;
+            --radius: 12px;
+            --sidebar-w: 250px;
+            --transition: 0.25s ease;
+        }
+
+        /* ======================= RESET & BASE ======================= */
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: var(--font);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* ======================= SIDEBAR ======================= */
+        .sidebar {
+            width: var(--sidebar-w);
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 24px 16px;
+            gap: 32px;
+            position: fixed;
+            height: 100vh;
+            z-index: 20;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 6px 10px;
+        }
+        .brand-icon { font-size: 26px; color: var(--indigo); }
+        .brand-name {
+            font-size: 20px; font-weight: 700;
+            background: linear-gradient(135deg, #A5B4FC, var(--indigo));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav { display: flex; flex-direction: column; gap: 6px; }
+        .nav-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 11px 14px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 14px;
+            border-radius: 10px;
+            transition: all var(--transition);
+        }
+        .nav-item:hover, .nav-item.active {
+            color: var(--text-primary);
+            background: var(--indigo-dim);
+            box-shadow: inset 3px 0 0 var(--indigo);
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            background: rgba(15,23,42,0.5);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 14px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        /* ======================= MAIN CONTENT ======================= */
+        .main {
+            margin-left: var(--sidebar-w);
+            flex: 1;
+            padding: 40px;
+            max-width: calc(100vw - var(--sidebar-w));
+        }
+
+        /* ======================= TOP HEADER ======================= */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 36px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+        .page-header h1 { font-size: 26px; font-weight: 700; }
+        .page-header p { color: var(--text-secondary); font-size: 14px; margin-top: 4px; }
+
+        .live-time {
+            display: flex; align-items: center; gap: 8px;
+            background: rgba(30,41,59,0.8);
+            border: 1px solid var(--border);
+            border-radius: 30px;
+            padding: 10px 18px;
+            font-size: 14px; font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .live-time i { color: var(--indigo); }
+
+        /* ======================= STAT CARDS ======================= */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: rgba(30,41,59,0.6);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 22px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform var(--transition);
+        }
+        .stat-card:hover { transform: translateY(-3px); border-color: rgba(99,102,241,0.3); }
+        .stat-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.8px; }
+        .stat-value { font-size: 28px; font-weight: 700; margin-top: 6px; }
+        .stat-icon {
+            width: 44px; height: 44px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+        }
+        .si-indigo  { background: var(--indigo-dim);  color: var(--indigo); }
+        .si-emerald { background: var(--emerald-dim); color: var(--emerald); }
+        .si-amber   { background: var(--amber-dim);   color: var(--amber); }
+        .si-rose    { background: var(--rose-dim);    color: var(--rose); }
+
+        /* ======================= CARD ======================= */
+        .card {
+            background: rgba(30,41,59,0.6);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+        .card-header h3 {
+            font-size: 17px; font-weight: 600;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .card-header h3 i { color: var(--indigo); }
+        .card-body { padding: 0; }
+
+        /* ======================= SEARCH BOX ======================= */
+        .search-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .search-box i {
+            position: absolute;
+            left: 13px;
+            color: var(--text-muted);
+            pointer-events: none;
+            font-size: 14px;
+        }
+        #search-input {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 9px 14px 9px 36px;
+            border-radius: 30px;
+            font-family: var(--font);
+            font-size: 14px;
+            outline: none;
+            width: 240px;
+            transition: all var(--transition);
+        }
+        #search-input:focus {
+            width: 310px;
+            border-color: var(--indigo);
+        }
+        #search-input::placeholder { color: var(--text-muted); }
+
+        /* ======================= TABLE ======================= */
+        .table-wrapper { overflow-x: auto; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        thead { background: rgba(15,23,42,0.5); }
+        th {
+            padding: 14px 20px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+        }
+        th:hover { color: var(--text-primary); }
+        th .sort-icon { margin-left: 4px; font-size: 9px; opacity: 0.4; }
+        th.sorted .sort-icon { opacity: 1; color: var(--indigo); }
+
+        td {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+        tbody tr { transition: background var(--transition); }
+        tbody tr:hover { background: rgba(255,255,255,0.025); }
+        tbody tr:last-child td { border-bottom: none; }
+
+        .patient-id { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+        .patient-name { font-weight: 600; color: var(--text-primary); }
+        .patient-email { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+        .patient-phone { font-size: 13px; color: var(--text-secondary); }
+        .medicines-cell { font-size: 12px; color: var(--text-secondary); max-width: 220px; }
+
+        /* Adherence progress bar */
+        .adherence-col { min-width: 160px; }
+        .progress-wrap { display: flex; align-items: center; gap: 10px; }
+        .progress-bar-bg {
+            flex: 1; height: 7px; background: rgba(255,255,255,0.07);
+            border-radius: 4px; overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%; border-radius: 4px;
+            transition: width 0.8s cubic-bezier(0.16,1,0.3,1);
+        }
+        .progress-label { font-size: 13px; font-weight: 600; min-width: 38px; text-align: right; }
+
+        /* Status badges */
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .b-excellent { background: var(--emerald-dim); color: var(--emerald); }
+        .b-moderate  { background: var(--amber-dim);   color: var(--amber); }
+        .b-at-risk   { background: var(--rose-dim);    color: var(--rose); }
+
+        /* ======================= EMPTY / LOADING STATES ======================= */
+        .state-row td {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+        .state-icon { font-size: 40px; margin-bottom: 14px; display: block; }
+
+        /* Spinner */
+        .spinner {
+            width: 36px; height: 36px; margin: 0 auto 14px;
+            border: 3px solid rgba(99,102,241,0.2);
+            border-top-color: var(--indigo);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ======================= MINI CHART ======================= */
+        .chart-container { height: 220px; padding: 20px 24px; }
+
+        /* ======================= RESPONSIVE ======================= */
+        @media (max-width: 900px) {
+            .sidebar { width: 68px; padding: 20px 8px; }
+            .brand-name, .nav-item span, .sidebar-footer { display: none; }
+            .nav-item { justify-content: center; padding: 12px; }
+            .main { margin-left: 68px; max-width: calc(100vw - 68px); padding: 24px 16px; }
+        }
+
+        /* ======================= ANIMATIONS ======================= */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .fade-up { animation: fadeUp 0.4s ease both; }
+    </style>
+</head>
+<body>
+
+<!-- ======================= SIDEBAR ======================= -->
+<aside class="sidebar">
+    <div class="brand">
+        <i class="fa-solid fa-house-chimney-medical brand-icon"></i>
+        <span class="brand-name">AuraMed</span>
+    </div>
+    <nav class="nav">
+        <a href="/" class="nav-item"><i class="fa-solid fa-chart-line"></i><span>Dashboard</span></a>
+        <a href="/adherence-report-page" class="nav-item"><i class="fa-solid fa-clipboard-check"></i><span>Adherence</span></a>
+        <a href="#" class="nav-item active"><i class="fa-solid fa-user-doctor"></i><span>Doctor Portal</span></a>
+    </nav>
+    <div class="sidebar-footer">
+        <i class="fa-solid fa-shield-heart" style="color:var(--indigo);font-size:20px;display:block;margin-bottom:8px;"></i>
+        AuraMed Doctor Portal<br>Read-only compliance view
+    </div>
+</aside>
+
+<!-- ======================= MAIN ======================= -->
+<main class="main">
+    <!-- Header -->
+    <div class="page-header fade-up">
+        <div>
+            <h1>Doctor Portal</h1>
+            <p>Monitor patient medication schedules and weekly adherence metrics</p>
+        </div>
+        <div class="live-time">
+            <i class="fa-regular fa-clock"></i>
+            <span id="clock">00:00:00</span>
+        </div>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="stats-row fade-up" id="stats-row">
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Total Patients</div>
+                <div class="stat-value" id="stat-total">—</div>
+            </div>
+            <div class="stat-icon si-indigo"><i class="fa-solid fa-users"></i></div>
+        </div>
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Excellent (≥85%)</div>
+                <div class="stat-value" id="stat-excellent" style="color:var(--emerald)">—</div>
+            </div>
+            <div class="stat-icon si-emerald"><i class="fa-solid fa-circle-check"></i></div>
+        </div>
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Borderline (60–84%)</div>
+                <div class="stat-value" id="stat-moderate" style="color:var(--amber)">—</div>
+            </div>
+            <div class="stat-icon si-amber"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        </div>
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">At Risk (&lt;60%)</div>
+                <div class="stat-value" id="stat-risk" style="color:var(--rose)">—</div>
+            </div>
+            <div class="stat-icon si-rose"><i class="fa-solid fa-circle-exclamation"></i></div>
+        </div>
+    </div>
+
+    <!-- Patient Table Card -->
+    <div class="card fade-up" style="margin-bottom:32px;">
+        <div class="card-header">
+            <h3><i class="fa-solid fa-hospital-user"></i> All Patients</h3>
+            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="search-input"
+                           placeholder="Search patient name…"
+                           oninput="filterTable()" autocomplete="off">
+                </div>
+                <button onclick="loadPatients()" title="Refresh" style="
+                    background:var(--indigo-dim);border:1px solid var(--indigo);
+                    color:var(--indigo);padding:8px 14px;border-radius:8px;
+                    cursor:pointer;font-size:14px;font-weight:600;">
+                    <i class="fa-solid fa-rotate-right"></i>
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-wrapper">
+                <table id="patients-table">
+                    <thead>
+                        <tr>
+                            <th onclick="sortTable('patient_id')" id="th-patient_id">
+                                ID <i class="fa-solid fa-sort sort-icon"></i>
+                            </th>
+                            <th onclick="sortTable('name')" id="th-name">
+                                Patient <i class="fa-solid fa-sort sort-icon"></i>
+                            </th>
+                            <th>Phone</th>
+                            <th>Active Medicines</th>
+                            <th onclick="sortTable('adherence_percentage')" id="th-adherence_percentage"
+                                class="adherence-col sorted">
+                                Adherence <i class="fa-solid fa-sort-down sort-icon"></i>
+                            </th>
+                            <th>Risk Level</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        <tr class="state-row">
+                            <td colspan="6">
+                                <div class="spinner"></div>
+                                <span>Loading patients…</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mini Adherence Distribution Chart -->
+    <div class="card fade-up">
+        <div class="card-header">
+            <h3><i class="fa-solid fa-chart-bar"></i> Patient Adherence Distribution</h3>
+        </div>
+        <div class="chart-container">
+            <canvas id="adherenceChart"></canvas>
+        </div>
+    </div>
+</main>
+
+<!-- ======================= JAVASCRIPT ======================= -->
+<script>
+    /* ---------- Global state ---------- */
+    let allPatients = [];
+    let sortKey = 'adherence_percentage';
+    let sortAsc = false;
+    let chartInstance = null;
+
+    /* ---------- Clock ---------- */
+    (function tickClock() {
+        document.getElementById('clock').textContent =
+            new Date().toLocaleTimeString();
+        setTimeout(tickClock, 1000);
+    })();
+
+    /* ---------- On load ---------- */
+    document.addEventListener('DOMContentLoaded', loadPatients);
+
+    /* ======================= DATA FETCH ======================= */
+    async function loadPatients() {
+        setLoading();
+        try {
+            const res = await fetch('/doctor/patients');
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const json = await res.json();
+
+            if (!json.success || !Array.isArray(json.data)) {
+                setError('API returned an unexpected response.');
+                return;
+            }
+
+            allPatients = json.data;
+            updateStats(allPatients);
+            renderTable(allPatients);
+            renderChart(allPatients);
+        } catch (err) {
+            console.error(err);
+            setError('Could not reach the server. Ensure Flask is running on port 5000.');
+        }
+    }
+
+    /* ======================= STATS SUMMARY ======================= */
+    function updateStats(data) {
+        document.getElementById('stat-total').textContent = data.length;
+        document.getElementById('stat-excellent').textContent =
+            data.filter(p => p.adherence_percentage >= 85).length;
+        document.getElementById('stat-moderate').textContent =
+            data.filter(p => p.adherence_percentage >= 60 && p.adherence_percentage < 85).length;
+        document.getElementById('stat-risk').textContent =
+            data.filter(p => p.adherence_percentage < 60).length;
+    }
+
+    /* ======================= TABLE RENDER ======================= */
+    function renderTable(data) {
+        const tbody = document.getElementById('table-body');
+
+        if (data.length === 0) {
+            tbody.innerHTML = `
+                <tr class="state-row">
+                    <td colspan="6">
+                        <i class="fa-solid fa-user-slash state-icon" style="color:var(--text-muted)"></i>
+                        No matching patients found.
+                    </td>
+                </tr>`;
+            return;
+        }
+
+        tbody.innerHTML = data.map((p, idx) => {
+            const rate = Number(p.adherence_percentage) || 0;
+            const { cls, label, barColor } = adherenceInfo(rate);
+
+            return `
+            <tr style="animation:fadeUp 0.3s ease ${idx * 40}ms both">
+                <td><span class="patient-id">P-${String(p.patient_id).padStart(3,'0')}</span></td>
+                <td>
+                    <div class="patient-name">${escHtml(p.name)}</div>
+                    <div class="patient-email">${escHtml(p.email)}</div>
+                </td>
+                <td><span class="patient-phone">${escHtml(p.phone)}</span></td>
+                <td><span class="medicines-cell">${escHtml(p.medicines)}</span></td>
+                <td class="adherence-col">
+                    <div class="progress-wrap">
+                        <div class="progress-bar-bg">
+                            <div class="progress-fill"
+                                 style="width:${rate}%;background:${barColor};"></div>
+                        </div>
+                        <span class="progress-label" style="color:${barColor}">${rate}%</span>
+                    </div>
+                </td>
+                <td><span class="badge ${cls}">${label}</span></td>
+            </tr>`;
+        }).join('');
+    }
+
+    /* ======================= FILTER ======================= */
+    function filterTable() {
+        const query = document.getElementById('search-input').value.trim().toLowerCase();
+        const filtered = allPatients.filter(p =>
+            p.name.toLowerCase().includes(query) ||
+            p.email.toLowerCase().includes(query)
+        );
+        renderTable(sortData(filtered));
+    }
+
+    /* ======================= SORT ======================= */
+    function sortTable(key) {
+        if (sortKey === key) {
+            sortAsc = !sortAsc;
+        } else {
+            sortKey = key;
+            sortAsc = key !== 'adherence_percentage'; // default desc for adherence
+        }
+
+        // Update header icons
+        document.querySelectorAll('th[id^="th-"]').forEach(th => {
+            th.classList.remove('sorted');
+            th.querySelector('.sort-icon').className = 'fa-solid fa-sort sort-icon';
+        });
+        const activeEl = document.getElementById(`th-${key}`);
+        if (activeEl) {
+            activeEl.classList.add('sorted');
+            activeEl.querySelector('.sort-icon').className =
+                `fa-solid ${sortAsc ? 'fa-sort-up' : 'fa-sort-down'} sort-icon`;
+        }
+
+        filterTable();
+    }
+
+    function sortData(data) {
+        return [...data].sort((a, b) => {
+            let va = a[sortKey], vb = b[sortKey];
+            if (typeof va === 'string') va = va.toLowerCase();
+            if (typeof vb === 'string') vb = vb.toLowerCase();
+            if (va < vb) return sortAsc ? -1 : 1;
+            if (va > vb) return sortAsc ? 1 : -1;
+            return 0;
+        });
+    }
+
+    /* ======================= CHART ======================= */
+    function renderChart(data) {
+        const ctx = document.getElementById('adherenceChart').getContext('2d');
+        if (chartInstance) chartInstance.destroy();
+
+        const names = data.map(p => p.name.split(' ')[0]); // first-name only for brevity
+        const rates = data.map(p => Number(p.adherence_percentage) || 0);
+        const colors = rates.map(r =>
+            r >= 85 ? 'rgba(16,185,129,0.7)' :
+            r >= 60 ? 'rgba(245,158,11,0.7)' :
+                      'rgba(239,68,68,0.7)');
+        const borders = rates.map(r =>
+            r >= 85 ? '#10B981' :
+            r >= 60 ? '#F59E0B' :
+                      '#EF4444');
+
+        chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: names,
+                datasets: [{
+                    label: 'Adherence %',
+                    data: rates,
+                    backgroundColor: colors,
+                    borderColor: borders,
+                    borderWidth: 2,
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ` ${ctx.parsed.y}% adherence`
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: { color: '#94A3B8', callback: v => `${v}%` },
+                        grid: { color: 'rgba(255,255,255,0.05)' }
+                    },
+                    x: {
+                        ticks: { color: '#94A3B8' },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    }
+
+    /* ======================= UTILITY ======================= */
+    function adherenceInfo(rate) {
+        if (rate >= 85) return { cls: 'b-excellent', label: 'Excellent', barColor: '#10B981' };
+        if (rate >= 60) return { cls: 'b-moderate',  label: 'Borderline', barColor: '#F59E0B' };
+        return               { cls: 'b-at-risk',    label: 'At Risk',    barColor: '#EF4444' };
+    }
+
+    function escHtml(str) {
+        if (!str) return '—';
+        return String(str)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function setLoading() {
+        document.getElementById('table-body').innerHTML = `
+            <tr class="state-row">
+                <td colspan="6">
+                    <div class="spinner"></div>
+                    <span>Loading patients…</span>
+                </td>
+            </tr>`;
+    }
+
+    function setError(msg) {
+        document.getElementById('table-body').innerHTML = `
+            <tr class="state-row">
+                <td colspan="6">
+                    <i class="fa-solid fa-circle-exclamation state-icon" style="color:var(--rose)"></i>
+                    <span style="color:var(--rose)">${escHtml(msg)}</span>
+                </td>
+            </tr>`;
+    }
+</script>
+</body>
+</html>
